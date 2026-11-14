@@ -254,6 +254,7 @@ class OperationsAssignmentsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookings = ref.watch(assignedBookingsProvider);
+    final repository = ref.read(bookingRepositoryProvider);
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
@@ -287,6 +288,46 @@ class OperationsAssignmentsPage extends ConsumerWidget {
                             if (booking.customerNote.isNotEmpty) ...[
                               const SizedBox(height: 7),
                               Text(booking.customerNote, style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
+                            ],
+                            if (booking.status == 'assigned' || booking.status == 'in_progress') ...[
+                              const SizedBox(height: 12),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: FilledButton.icon(
+                                  onPressed: () async {
+                                    final nextStatus = booking.status == 'assigned'
+                                        ? 'in_progress'
+                                        : 'completed';
+                                    try {
+                                      await repository.updateAssignedProgress(
+                                        bookingId: booking.id,
+                                        status: nextStatus,
+                                      );
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(nextStatus == 'completed' ? 'Service marked completed.' : 'Service started.')),
+                                        );
+                                      }
+                                    } catch (_) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Could not update this booking. Refresh and try again.')),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: Icon(
+                                    booking.status == 'assigned'
+                                        ? Icons.play_arrow_rounded
+                                        : Icons.task_alt_rounded,
+                                  ),
+                                  label: Text(
+                                    booking.status == 'assigned'
+                                        ? 'Start service'
+                                        : 'Mark completed',
+                                  ),
+                                ),
+                              ),
                             ],
                           ],
                         ),

@@ -188,7 +188,7 @@ create table if not exists public.bookings (
   booking_date timestamptz,
   party_size integer not null default 1 check (party_size > 0),
   status text not null default 'pending'
-    check (status in ('pending', 'confirmed', 'assigned', 'in_progress', 'completed', 'cancelled', 'refunded')),
+    check (status in ('pending', 'confirmed', 'assigned', 'in_progress', 'completed', 'cancelled')),
   total_amount numeric(12,2) not null default 0 check (total_amount >= 0),
   currency text not null default 'INR',
   customer_note text not null default '',

@@ -3,6 +3,68 @@ import 'package:divine_design_system/divine_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+Future<void> _promptProviderAssignment(
+  BuildContext context,
+  BookingModel booking,
+  BookingRepository repository,
+) async {
+  final controller = TextEditingController();
+  final providerId = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Assign provider'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Enter the Supabase Auth user ID of an account with the approved provider role.',
+            style: TextStyle(fontSize: 12, color: DivineColors.muted, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: 'Provider user UUID'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (controller.text.trim().isNotEmpty) {
+              Navigator.pop(dialogContext, controller.text.trim());
+            }
+          },
+          child: const Text('Assign'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (providerId == null) return;
+  try {
+    await repository.assignProvider(
+      bookingId: booking.id,
+      providerUserId: providerId,
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking assigned to provider.')),
+      );
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Assignment failed. Verify the provider ID and role.')),
+      );
+    }
+  }
+}
+
 class AdminBookingsPage extends ConsumerWidget {
   const AdminBookingsPage({super.key});
 
@@ -47,6 +109,19 @@ class AdminBookingsPage extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Text(booking.bookingDate!.toLocal().toString().split('.').first, style: const TextStyle(color: DivineColors.muted, fontSize: 10)),
                             ],
+                            if (booking.providerId != null) ...[
+                              const SizedBox(height: 5),
+                              Text('Provider ID: ${booking.providerId}', style: const TextStyle(color: DivineColors.muted, fontSize: 10)),
+                            ],
+                            if (booking.status == 'pending' || booking.status == 'confirmed')
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: () => _promptProviderAssignment(context, booking, repository),
+                                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 17),
+                                  label: const Text('Assign provider'),
+                                ),
+                              ),
                             const SizedBox(height: 10),
                             DropdownButtonFormField<String>(
                               value: booking.status,
@@ -59,8 +134,8 @@ class AdminBookingsPage extends ConsumerWidget {
                                 DropdownMenuItem(value: 'completed', child: Text('Completed')),
                                 DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
                                                               ],
-                              onChanged: booking.status == 'refunded' ? null : (value) async {
-                                if (value == null || value == booking.status || value == 'refunded') return;
+                              onChanged: (value) async {
+                                if (value == null || value == booking.status) return;
                                 try {
                                   await repository.updateStatus(booking.id, value);
                                 } catch (_) {

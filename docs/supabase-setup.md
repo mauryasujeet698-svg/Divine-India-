@@ -38,6 +38,8 @@ After applying all migrations, deploy the function:
 
 ```bash
 supabase functions deploy create-booking
+supabase functions deploy assign-booking
+supabase functions deploy update-booking-progress
 ```
 
 The function uses the current `@supabase/server` SDK. Supabase provisions `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEYS`, `SUPABASE_SECRET_KEYS` and `SUPABASE_JWKS` in hosted Edge Function environments. The SDK verifies the signed-in user's JWT and provides an RLS-scoped client; it uses the secret-backed admin client only for the validated booking insert. Do not copy a secret key into the repository or Flutter app.

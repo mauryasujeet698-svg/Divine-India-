@@ -28,3 +28,9 @@ file_size_limit = "5MiB"
 
 [functions.create-booking]
 verify_jwt = true
+
+[functions.assign-booking]
+verify_jwt = true
+
+[functions.update-booking-progress]
+verify_jwt = true
