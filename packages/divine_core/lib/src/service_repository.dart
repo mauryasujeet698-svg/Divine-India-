@@ -33,6 +33,7 @@ class ServiceRepository {
     String? id,
     required String title,
     required String slug,
+    required String categorySlug,
     required String shortDescription,
     String? locationName,
     String? imageUrl,
@@ -42,6 +43,7 @@ class ServiceRepository {
     final values = <String, dynamic>{
       'title': title.trim(),
       'slug': slug.trim().toLowerCase(),
+      'category_slug': categorySlug,
       'short_description': shortDescription.trim(),
       'location_name': locationName?.trim(),
       'image_url': imageUrl,

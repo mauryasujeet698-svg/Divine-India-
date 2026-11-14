@@ -5,6 +5,7 @@ class ServiceModel {
     required this.slug,
     required this.shortDescription,
     required this.categoryId,
+    required this.categorySlug,
     required this.imageUrl,
     required this.locationName,
     required this.priceFrom,
@@ -17,6 +18,7 @@ class ServiceModel {
   final String slug;
   final String shortDescription;
   final String? categoryId;
+  final String categorySlug;
   final String? imageUrl;
   final String? locationName;
   final num? priceFrom;
@@ -29,6 +31,7 @@ class ServiceModel {
         slug: map['slug']?.toString() ?? '',
         shortDescription: map['short_description']?.toString() ?? '',
         categoryId: map['category_id']?.toString(),
+        categorySlug: map['category_slug']?.toString() ?? 'local-experiences',
         imageUrl: map['image_url']?.toString(),
         locationName: map['location_name']?.toString(),
         priceFrom: map['price_from'] as num?,

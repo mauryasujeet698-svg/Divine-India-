@@ -187,6 +187,7 @@ class _ServiceEditorDialogState extends State<ServiceEditorDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _title;
   late final TextEditingController _slug;
+  String _categorySlug = 'local-experiences';
   late final TextEditingController _description;
   late final TextEditingController _location;
   late final TextEditingController _price;
@@ -201,6 +202,7 @@ class _ServiceEditorDialogState extends State<ServiceEditorDialog> {
     final item = widget.service;
     _title = TextEditingController(text: item?.title ?? '');
     _slug = TextEditingController(text: item?.slug ?? '');
+    _categorySlug = item?.categorySlug ?? 'local-experiences';
     _description = TextEditingController(text: item?.shortDescription ?? '');
     _location = TextEditingController(text: item?.locationName ?? '');
     _price = TextEditingController(text: item?.priceFrom?.toString() ?? '');
@@ -227,6 +229,7 @@ class _ServiceEditorDialogState extends State<ServiceEditorDialog> {
         id: widget.service?.id,
         title: _title.text,
         slug: _slug.text,
+        categorySlug: _categorySlug,
         shortDescription: _description.text,
         locationName: _location.text,
         imageUrl: _imageUrl.text.trim().isEmpty ? null : _imageUrl.text.trim(),
@@ -256,7 +259,44 @@ class _ServiceEditorDialogState extends State<ServiceEditorDialog> {
               children: [
                 TextFormField(controller: _title, decoration: const InputDecoration(labelText: 'Service name'), validator: (v) => v == null || v.trim().isEmpty ? 'Enter a service name.' : null),
                 const SizedBox(height: 9),
-                TextFormField(controller: _slug, decoration: const InputDecoration(labelText: 'Unique slug (e.g. kashi-puja)'), validator: (v) => v == null || !RegExp(r'^[a-z0-9-]+$').hasMatch(v.trim()) ? 'Use lowercase letters, numbers and hyphens.' : null),
+                TextFormField(controller: _slug, decoration: const InputDecoration(labelText: 'Unique service slug (e.g. kashi-puja)'), validator: (v) => v == null || !RegExp(r'^[a-z0-9-]+
+                TextFormField(controller: _description, maxLines: 3, decoration: const InputDecoration(labelText: 'Description')),
+                const SizedBox(height: 9),
+                TextFormField(controller: _location, decoration: const InputDecoration(labelText: 'Location')),
+                const SizedBox(height: 9),
+                TextFormField(controller: _price, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Starting price (INR, optional)'), validator: (v) => v != null && v.trim().isNotEmpty && num.tryParse(v.trim()) == null ? 'Enter a valid amount.' : null),
+                const SizedBox(height: 9),
+                TextFormField(controller: _imageUrl, decoration: const InputDecoration(labelText: 'Image URL (optional)')),
+                SwitchListTile(contentPadding: EdgeInsets.zero, value: _published, onChanged: (v) => setState(() => _published = v), title: const Text('Publish service')),
+                if (_error != null) Align(alignment: Alignment.centerLeft, child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12))),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        FilledButton(
+          onPressed: _saving ? null : _save,
+          child: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Save service'),
+        ),
+      ],
+    );
+  }
+}
+).hasMatch(v.trim()) ? 'Use lowercase letters, numbers and hyphens.' : null),
+                const SizedBox(height: 9),
+                DropdownButtonFormField<String>(
+                  value: _categorySlug,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  items: const [
+                    DropdownMenuItem(value: 'puja-rituals', child: Text('Puja & rituals')),
+                    DropdownMenuItem(value: 'pilgrimage', child: Text('Pilgrimage')),
+                    DropdownMenuItem(value: 'spiritual-stays', child: Text('Spiritual stays')),
+                    DropdownMenuItem(value: 'local-experiences', child: Text('Local experiences')),
+                  ],
+                  onChanged: (value) { if (value != null) setState(() => _categorySlug = value); },
+                ),
                 const SizedBox(height: 9),
                 TextFormField(controller: _description, maxLines: 3, decoration: const InputDecoration(labelText: 'Description')),
                 const SizedBox(height: 9),

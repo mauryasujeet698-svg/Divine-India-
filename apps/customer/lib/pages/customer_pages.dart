@@ -506,7 +506,7 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
           error: (error, stack) => const DivineEmptyState(icon: Icons.cloud_off_rounded, title: 'Catalogue unavailable', message: 'Please check your connection and try again.'),
           data: (items) {
             final visible = items.where((item) {
-              final category = categoryBySlug[item.slug] ?? 'All';
+              final category = categoryBySlug[item.categorySlug] ?? 'All';
               final categoryMatches = _category == 'All' || category == _category;
               final queryMatches = query.isEmpty || item.title.toLowerCase().contains(query) || item.shortDescription.toLowerCase().contains(query) || (item.locationName ?? '').toLowerCase().contains(query);
               return categoryMatches && queryMatches;
