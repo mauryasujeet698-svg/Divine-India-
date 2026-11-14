@@ -5,6 +5,8 @@ import 'banner_model.dart';
 import 'banner_repository.dart';
 import 'booking_model.dart';
 import 'booking_repository.dart';
+import 'provider_availability_model.dart';
+import 'provider_availability_repository.dart';
 import 'service_model.dart';
 import 'service_repository.dart';
 
@@ -46,6 +48,16 @@ final assignedBookingsProvider = StreamProvider<List<BookingModel>>(
 
 final adminBookingsProvider = StreamProvider<List<BookingModel>>(
   (ref) => ref.watch(bookingRepositoryProvider).watchAllBookings(),
+);
+
+final providerAvailabilityRepositoryProvider =
+    Provider<ProviderAvailabilityRepository>(
+  (ref) => ProviderAvailabilityRepository(),
+);
+
+final myAvailabilityProvider =
+    StreamProvider<List<ProviderAvailabilityModel>>(
+  (ref) => ref.watch(providerAvailabilityRepositoryProvider).watchMyAvailability(),
 );
 
 final divineAuthServiceProvider = Provider<DivineAuthService>(

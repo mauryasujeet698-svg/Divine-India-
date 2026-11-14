@@ -32,6 +32,17 @@ class BookingRepository {
         .map((rows) => rows.map(BookingModel.fromMap).toList(growable: false));
   }
 
+  Future<void> updateStatus(String id, String status) async {
+    const allowed = {'confirmed', 'assigned', 'in_progress', 'completed', 'cancelled'};
+    if (!allowed.contains(status)) {
+      throw ArgumentError.value(status, 'status', 'Unsupported booking status.');
+    }
+    await _client.from('bookings').update({
+      'status': status,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
+  }
+
   Stream<List<BookingModel>> watchAllBookings() {
     return _client
         .from('bookings')
