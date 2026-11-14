@@ -248,58 +248,188 @@ class OperationsOverviewPage extends StatelessWidget {
   }
 }
 
-class OperationsAssignmentsPage extends StatelessWidget {
+class OperationsAssignmentsPage extends ConsumerWidget {
   const OperationsAssignmentsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookings = ref.watch(assignedBookingsProvider);
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
         const Text('Assignments', style: TextStyle(color: DivineColors.maroon, fontSize: 25, fontWeight: FontWeight.w900)),
         const SizedBox(height: 5),
         const Text('Bookings and service tasks assigned to your account.', style: TextStyle(color: DivineColors.muted, fontSize: 13)),
-        const SizedBox(height: 20),
-        const DivineEmptyState(
-          icon: Icons.assignment_outlined,
-          title: 'No assignments to show',
-          message: 'When a booking is assigned to you, its service details, customer instructions and timing will appear here.',
+        const SizedBox(height: 18),
+        bookings.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: DivineColors.saffron)),
+          error: (error, stack) => const DivineEmptyState(icon: Icons.cloud_off_rounded, title: 'Assignments unavailable', message: 'Check your internet connection and assigned account permissions.'),
+          data: (items) => items.isEmpty
+              ? const DivineEmptyState(icon: Icons.assignment_outlined, title: 'No assignments to show', message: 'When a booking is assigned to you, its service details, customer instructions and timing will appear here.')
+              : Column(
+                  children: items.map((booking) => Container(
+                        margin: const EdgeInsets.only(bottom: 11),
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(color: DivineColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: DivineColors.border)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(child: Text(booking.reference, style: const TextStyle(color: DivineColors.maroon, fontWeight: FontWeight.w900))),
+                                DivineStatusPill(label: booking.status.toUpperCase()),
+                              ],
+                            ),
+                            const SizedBox(height: 7),
+                            Text(booking.bookingDate?.toLocal().toString().split('.').first ?? 'Date to be confirmed', style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
+                            const SizedBox(height: 5),
+                            Text('${booking.partySize} guest(s) • ${booking.currency} ${booking.totalAmount.toStringAsFixed(2)}', style: const TextStyle(color: DivineColors.ink, fontSize: 12, fontWeight: FontWeight.w700)),
+                            if (booking.customerNote.isNotEmpty) ...[
+                              const SizedBox(height: 7),
+                              Text(booking.customerNote, style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
+                            ],
+                          ],
+                        ),
+                      )).toList(),
+                ),
         ),
       ],
     );
   }
 }
 
-class OperationsSchedulePage extends StatelessWidget {
+class OperationsSchedulePage extends ConsumerWidget {
   const OperationsSchedulePage({super.key});
 
+  static const _days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  Future<void> _editDay(
+    BuildContext context,
+    WidgetRef ref,
+    int weekday,
+    ProviderAvailabilityModel? current,
+  ) async {
+    TimeOfDay parseTime(String? value, TimeOfDay fallback) {
+      if (value == null) return fallback;
+      final parts = value.split(':');
+      if (parts.length < 2) return fallback;
+      return TimeOfDay(hour: int.tryParse(parts[0]) ?? fallback.hour, minute: int.tryParse(parts[1]) ?? fallback.minute);
+    }
+
+    var start = parseTime(current?.startTime, const TimeOfDay(hour: 9, minute: 0));
+    var end = parseTime(current?.endTime, const TimeOfDay(hour: 17, minute: 0));
+    var available = current?.isAvailable ?? false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(_days[weekday - 1]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: available,
+                onChanged: (value) => setDialogState(() => available = value),
+                title: const Text('Available for bookings'),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Start time'),
+                trailing: TextButton(
+                  onPressed: () async {
+                    final picked = await showTimePicker(context: context, initialTime: start);
+                    if (picked != null) setDialogState(() => start = picked);
+                  },
+                  child: Text(start.format(context)),
+                ),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('End time'),
+                trailing: TextButton(
+                  onPressed: () async {
+                    final picked = await showTimePicker(context: context, initialTime: end);
+                    if (picked != null) setDialogState(() => end = picked);
+                  },
+                  child: Text(end.format(context)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () async {
+                if (end.hour * 60 + end.minute <= start.hour * 60 + start.minute) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('End time must be later than start time.')));
+                  return;
+                }
+                try {
+                  await ref.read(providerAvailabilityRepositoryProvider).saveDay(
+                    weekday: weekday,
+                    startTime: '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}:00',
+                    endTime: '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}:00',
+                    isAvailable: available,
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } catch (_) {
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Could not save availability. Check your provider role and database migration.')));
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final availability = ref.watch(myAvailabilityProvider);
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
         const Text('My schedule', style: TextStyle(color: DivineColors.maroon, fontSize: 25, fontWeight: FontWeight.w900)),
         const SizedBox(height: 5),
-        const Text('Set your availability for upcoming services.', style: TextStyle(color: DivineColors.muted, fontSize: 13)),
+        const Text('Set the days and hours when you can accept services.', style: TextStyle(color: DivineColors.muted, fontSize: 13)),
         const SizedBox(height: 17),
-        ...days.map((day) => Container(
-              margin: const EdgeInsets.only(bottom: 9),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-              decoration: BoxDecoration(
-                color: DivineColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: DivineColors.border),
-              ),
-              child: Row(
-                children: [
-                  Expanded(child: Text(day, style: const TextStyle(fontWeight: FontWeight.w800))),
-                  const Text('Not set', style: TextStyle(color: DivineColors.muted, fontSize: 11)),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right_rounded, color: DivineColors.muted),
-                ],
-              ),
-            )),
+        availability.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: DivineColors.saffron)),
+          error: (error, stack) => const DivineEmptyState(icon: Icons.cloud_off_rounded, title: 'Availability unavailable', message: 'Apply the provider availability migration and check your role.'),
+          data: (items) {
+            return Column(
+              children: List.generate(7, (index) {
+                final day = index + 1;
+                final current = items.where((item) => item.weekday == day).firstOrNull;
+                final isAvailable = current?.isAvailable ?? false;
+                final start = current?.startTime.substring(0, 5) ?? '09:00';
+                final end = current?.endTime.substring(0, 5) ?? '17:00';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 9),
+                  decoration: BoxDecoration(color: DivineColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: DivineColors.border)),
+                  child: ListTile(
+                    onTap: () => _editDay(context, ref, day, current),
+                    title: Text(_days[index], style: const TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text(isAvailable ? '$start – $end' : 'Not available', style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DivineStatusPill(label: isAvailable ? 'AVAILABLE' : 'OFF', color: isAvailable ? DivineColors.success : DivineColors.muted),
+                        const SizedBox(width: 7),
+                        const Icon(Icons.chevron_right_rounded, color: DivineColors.muted),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            );
+          },
+        ),
       ],
     );
   }
