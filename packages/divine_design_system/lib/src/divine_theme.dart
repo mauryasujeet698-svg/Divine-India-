@@ -42,7 +42,7 @@ abstract final class DivineTheme {
           fontWeight: FontWeight.w800,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: DivineColors.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
