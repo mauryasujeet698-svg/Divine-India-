@@ -42,15 +42,29 @@ jobs:
           APP: ${{ inputs.app }}
         run: |
           case "$APP" in
-            customer) PROJECT_NAME="divine_india_customer" ;;
-            admin) PROJECT_NAME="divine_india_admin" ;;
-            operations) PROJECT_NAME="divine_india_operations" ;;
-            *) echo "Unsupported app"; exit 1 ;;
+            customer)
+              PROJECT_NAME="customer"
+              APP_LABEL="Divine India"
+              ;;
+            admin)
+              PROJECT_NAME="admin"
+              APP_LABEL="Divine India Admin"
+              ;;
+            operations)
+              PROJECT_NAME="operations"
+              APP_LABEL="Divine India Operations"
+              ;;
+            *)
+              echo "Unsupported app"
+              exit 1
+              ;;
           esac
+
           TEMP_DIR="$(mktemp -d)"
           flutter create --org in.divineindia --project-name "$PROJECT_NAME" --platforms=android "$TEMP_DIR/$PROJECT_NAME"
           mkdir -p "apps/$APP"
           cp -R "$TEMP_DIR/$PROJECT_NAME/android" "apps/$APP/android"
+          sed -i "s/android:label=\"[^\"]*\"/android:label=\"$APP_LABEL\"/" "apps/$APP/android/app/src/main/AndroidManifest.xml"
           rm -rf "$TEMP_DIR"
 
       - name: Resolve dependencies
@@ -63,7 +77,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          flutter build apk --release             --dart-define="SUPABASE_URL=$SUPABASE_URL"             --dart-define="SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY"
+          flutter build apk --release \
+            --dart-define="SUPABASE_URL=$SUPABASE_URL" \
+            --dart-define="SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY"
 
       - name: Upload APK for one day
         uses: actions/upload-artifact@v4
