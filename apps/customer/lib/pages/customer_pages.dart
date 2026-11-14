@@ -284,9 +284,15 @@ class _BannerSlide extends StatelessWidget {
                 const SizedBox(height: 11),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: DivineColors.templeGold,
+                  child: InkWell(
+                    onTap: () {
+                      const routes = {'/explore', '/bookings', '/profile'};
+                      context.go(routes.contains(banner.ctaRoute) ? banner.ctaRoute : '/explore');
+                    },
+                    borderRadius: BorderRadius.circular(30),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: DivineColors.templeGold,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Padding(
