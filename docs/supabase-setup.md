@@ -32,7 +32,19 @@ The migration creates the `divine-banners` Storage bucket and the `public.banner
 ## 5. OAuth and redirects
 Configure Google or other identity providers in Supabase Auth and register redirect URLs for each Android application before enabling OAuth. This starter currently provides email/password sign-in for restricted apps and keeps customer browsing available without authentication.
 
-## 6. Production checklist
+## 6. Deploy the booking-request function
+
+Apply all four migrations in timestamp order, then deploy the Edge Function:
+
+```bash
+supabase functions deploy create-booking
+```
+
+The function uses the project secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Supabase provides these to Edge Functions in a standard project. Do not copy the service-role key into any Flutter app or client-side configuration.
+
+This endpoint creates a **pending booking request** only. It does not collect payment, confirm inventory, or issue refunds. Add a verified payment-gateway integration before treating the booking as paid or confirmed.
+
+## 7. Production checklist
 - Configure Auth email templates, rate limits and allowed redirect URLs.
 - Confirm RLS policies with anon, customer, provider, operations and admin test accounts.
 - Configure backups, database monitoring and Storage lifecycle policies.

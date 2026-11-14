@@ -37,7 +37,7 @@ Frontend source and application configuration are being added in staged commits.
 flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
-The customer app can be explored in demo mode when Supabase values are not configured. Admin and operations sign-in require a configured Supabase project and authorized accounts.
+The customer app can be explored in demo mode when Supabase values are not configured. Admin and operations sign-in require a configured Supabase project and authorized accounts. Customer booking requests require the deployed `create-booking` Edge Function.
 
 ## Build policy
 

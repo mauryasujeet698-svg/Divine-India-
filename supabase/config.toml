@@ -25,3 +25,6 @@ additional_redirect_urls = [
 [storage]
 enabled = true
 file_size_limit = "5MiB"
+
+[functions.create-booking]
+verify_jwt = true
