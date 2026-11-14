@@ -76,6 +76,8 @@ class BannerRepository {
     required String ctaRoute,
     required int sortOrder,
     required bool isActive,
+    DateTime? startsAt,
+    DateTime? endsAt,
   }) async {
     final values = {
       'title': title.trim(),
@@ -85,6 +87,8 @@ class BannerRepository {
       'cta_route': ctaRoute.trim().isEmpty ? '/explore' : ctaRoute.trim(),
       'sort_order': sortOrder,
       'is_active': isActive,
+      'starts_at': startsAt?.toUtc().toIso8601String(),
+      'ends_at': endsAt?.toUtc().toIso8601String(),
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
 
