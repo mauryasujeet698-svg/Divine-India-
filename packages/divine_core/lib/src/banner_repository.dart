@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,15 +20,57 @@ class BannerRepository {
       return Stream<List<BannerModel>>.value(BannerModel.demoBanners);
     }
 
-    return _client
-        .from('banners')
-        .stream(primaryKey: ['id'])
-        .eq('is_active', true)
-        .order('sort_order')
-        .map((rows) => rows
-            .map(BannerModel.fromMap)
-            .where((banner) => banner.isVisibleNow)
-            .toList(growable: false));
+    late final StreamController<List<BannerModel>> controller;
+    StreamSubscription<List<Map<String, dynamic>>>? subscription;
+    Timer? scheduleTimer;
+    List<BannerModel> latest = const [];
+
+    void emitVisibleBanners() {
+      final now = DateTime.now().toUtc();
+      final visible = latest.where((banner) => banner.isVisibleNow).toList()
+        ..sort((left, right) => left.sortOrder.compareTo(right.sortOrder));
+      if (!controller.isClosed) {
+        controller.add(List<BannerModel>.unmodifiable(visible));
+      }
+
+      scheduleTimer?.cancel();
+      DateTime? nextBoundary;
+      for (final banner in latest) {
+        for (final boundary in [banner.startsAt, banner.endsAt]) {
+          if (boundary != null &&
+              boundary.isAfter(now) &&
+              (nextBoundary == null || boundary.isBefore(nextBoundary))) {
+            nextBoundary = boundary;
+          }
+        }
+      }
+      if (nextBoundary != null) {
+        scheduleTimer = Timer(nextBoundary.difference(now), emitVisibleBanners);
+      }
+    }
+
+    controller = StreamController<List<BannerModel>>(
+      onListen: () {
+        subscription = _client
+            .from('banners')
+            .stream(primaryKey: ['id'])
+            .eq('is_active', true)
+            .order('sort_order')
+            .listen(
+          (rows) {
+            latest = rows.map(BannerModel.fromMap).toList(growable: false);
+            emitVisibleBanners();
+          },
+          onError: controller.addError,
+        );
+      },
+      onCancel: () async {
+        scheduleTimer?.cancel();
+        await subscription?.cancel();
+      },
+    );
+
+    return controller.stream;
   }
 
   Stream<List<BannerModel>> watchAllBanners() {
