@@ -1,0 +1,74 @@
+name: Manual Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Which Divine India app should be packaged?
+        required: true
+        type: choice
+        options:
+          - customer
+          - admin
+          - operations
+        default: customer
+
+permissions:
+  contents: read
+
+concurrency:
+  group: divine-india-apk-${{ inputs.app }}
+  cancel-in-progress: false
+
+jobs:
+  build-apk:
+    name: Package ${{ inputs.app }} APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.0'
+          channel: stable
+          cache: true
+
+      - name: Generate Android platform files
+        shell: bash
+        env:
+          APP: ${{ inputs.app }}
+        run: |
+          case "$APP" in
+            customer) PROJECT_NAME="divine_india_customer" ;;
+            admin) PROJECT_NAME="divine_india_admin" ;;
+            operations) PROJECT_NAME="divine_india_operations" ;;
+            *) echo "Unsupported app"; exit 1 ;;
+          esac
+          TEMP_DIR="$(mktemp -d)"
+          flutter create --org in.divineindia --project-name "$PROJECT_NAME" --platforms=android "$TEMP_DIR/$PROJECT_NAME"
+          mkdir -p "apps/$APP"
+          cp -R "$TEMP_DIR/$PROJECT_NAME/android" "apps/$APP/android"
+          rm -rf "$TEMP_DIR"
+
+      - name: Resolve dependencies
+        working-directory: apps/${{ inputs.app }}
+        run: flutter pub get
+
+      - name: Build APK (manual workflow only)
+        working-directory: apps/${{ inputs.app }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          flutter build apk --release             --dart-define="SUPABASE_URL=$SUPABASE_URL"             --dart-define="SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY"
+
+      - name: Upload APK for one day
+        uses: actions/upload-artifact@v4
+        with:
+          name: divine-india-${{ inputs.app }}-apk
+          path: apps/${{ inputs.app }}/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 1
