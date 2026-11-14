@@ -38,13 +38,23 @@ final bookingRepositoryProvider = Provider<BookingRepository>(
   (ref) => BookingRepository(),
 );
 
-final customerBookingsProvider = StreamProvider<List<BookingModel>>(
-  (ref) => ref.watch(bookingRepositoryProvider).watchMyBookings(),
-);
+final authStateChangesProvider = StreamProvider<bool>((ref) {
+  final client = divineSupabaseClient;
+  if (client == null) return Stream<bool>.value(false);
+  return client.auth.onAuthStateChange.map(
+    (authState) => authState.session != null,
+  );
+});
 
-final assignedBookingsProvider = StreamProvider<List<BookingModel>>(
-  (ref) => ref.watch(bookingRepositoryProvider).watchAssignedBookings(),
-);
+final customerBookingsProvider = StreamProvider<List<BookingModel>>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(bookingRepositoryProvider).watchMyBookings();
+});
+
+final assignedBookingsProvider = StreamProvider<List<BookingModel>>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(bookingRepositoryProvider).watchAssignedBookings();
+});
 
 final adminBookingsProvider = StreamProvider<List<BookingModel>>(
   (ref) => ref.watch(bookingRepositoryProvider).watchAllBookings(),
