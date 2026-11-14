@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'pages/customer_pages.dart';
+import 'pages/customer_auth_page.dart';
 
 class DivineCustomerApp extends StatelessWidget {
   const DivineCustomerApp({super.key});
@@ -47,6 +48,10 @@ class DivineCustomerApp extends StatelessWidget {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/sign-in',
+        builder: (context, state) => const CustomerAuthPage(),
       ),
     ],
   );

@@ -646,13 +646,19 @@ class CustomerBookingsPage extends StatelessWidget {
           style: TextStyle(color: DivineColors.muted, fontSize: 13),
         ),
         const SizedBox(height: 22),
-        if (user == null)
+        if (user == null) ...[
           const DivineEmptyState(
             icon: Icons.confirmation_number_outlined,
             title: 'Your journeys will appear here',
             message: 'Sign in when you are ready to make a booking and track its status.',
-          )
-        else
+          ),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: () => context.push('/sign-in'),
+            icon: const Icon(Icons.login_rounded),
+            label: const Text('Sign in to view bookings'),
+          ),
+        ] else
           const DivineEmptyState(
             icon: Icons.temple_hindu_rounded,
             title: 'No bookings yet',
@@ -714,6 +720,14 @@ class CustomerProfilePage extends StatelessWidget {
             ],
           ),
         ),
+        if (user == null) ...[
+          FilledButton.icon(
+            onPressed: () => context.push('/sign-in'),
+            icon: const Icon(Icons.login_rounded),
+            label: const Text('Sign in or create an account'),
+          ),
+          const SizedBox(height: 18),
+        ],
         const SizedBox(height: 22),
         const DivineSectionHeading(title: 'Your account'),
         const SizedBox(height: 9),
