@@ -1,0 +1,27 @@
+name: divine_india_admin
+description: Restricted administration app for Divine India.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.12.0 <4.0.0"
+  flutter: ">=3.50.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.5.0
+  supabase_flutter: ^2.17.1
+  image_picker: ^1.2.4
+  divine_core:
+    path: ../../packages/divine_core
+  divine_design_system:
+    path: ../../packages/divine_design_system
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
