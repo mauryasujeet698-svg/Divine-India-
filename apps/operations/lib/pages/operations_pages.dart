@@ -283,7 +283,7 @@ class OperationsAssignmentsPage extends ConsumerWidget {
                             const SizedBox(height: 7),
                             Text(booking.bookingDate?.toLocal().toString().split('.').first ?? 'Date to be confirmed', style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
                             const SizedBox(height: 5),
-                            Text('${booking.partySize} guest(s) • ${booking.currency} ${booking.totalAmount.toStringAsFixed(2)}', style: const TextStyle(color: DivineColors.ink, fontSize: 12, fontWeight: FontWeight.w700)),
+                            Text(booking.totalAmount <= 0 ? '${booking.partySize} guest(s) • Quote/payment pending' : '${booking.partySize} guest(s) • ${booking.currency} ${booking.totalAmount.toStringAsFixed(2)}', style: const TextStyle(color: DivineColors.ink, fontSize: 12, fontWeight: FontWeight.w700)),
                             if (booking.customerNote.isNotEmpty) ...[
                               const SizedBox(height: 7),
                               Text(booking.customerNote, style: const TextStyle(color: DivineColors.muted, fontSize: 11)),

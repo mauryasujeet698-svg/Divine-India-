@@ -1,6 +1,7 @@
 import 'package:divine_core/divine_core.dart';
 import 'package:divine_design_system/divine_design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ServiceBookingRequestDialog extends StatefulWidget {
   const ServiceBookingRequestDialog({super.key, required this.service});
@@ -104,7 +105,7 @@ class _ServiceBookingRequestDialogState extends State<ServiceBookingRequestDialo
 
 Future<void> showServiceBookingRequest(BuildContext context, ServiceModel service) async {
   if (divineSupabaseClient?.auth.currentUser == null) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please sign in to request a booking.')));
+    context.push('/sign-in');
     return;
   }
   final reference = await showDialog<String>(

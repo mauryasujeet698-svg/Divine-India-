@@ -628,7 +628,7 @@ class CustomerBookingsPage extends ConsumerWidget {
                             const SizedBox(height: 8),
                             Text(booking.bookingDate?.toLocal().toString().split('.').first ?? 'Date to be confirmed', style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
                             const SizedBox(height: 4),
-                            Text('${booking.currency} ${booking.totalAmount.toStringAsFixed(2)} • ${booking.partySize} guest(s)', style: const TextStyle(color: DivineColors.ink, fontWeight: FontWeight.w700, fontSize: 12)),
+                            Text(booking.totalAmount <= 0 ? 'Quote/payment pending • ${booking.partySize} guest(s)' : '${booking.currency} ${booking.totalAmount.toStringAsFixed(2)} • ${booking.partySize} guest(s)', style: const TextStyle(color: DivineColors.ink, fontWeight: FontWeight.w700, fontSize: 12)),
                           ],
                         ),
                       )).toList(),

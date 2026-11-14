@@ -40,7 +40,7 @@ class AdminBookingsPage extends ConsumerWidget {
                             Text('Customer: ${booking.userId}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: DivineColors.muted, fontSize: 10)),
                             const SizedBox(height: 4),
                             Text(
-                              '${booking.currency} ${booking.totalAmount.toStringAsFixed(2)} • ${booking.partySize} guest(s)',
+                              booking.totalAmount <= 0 ? 'Quote/payment pending • ${booking.partySize} guest(s)' : '${booking.currency} ${booking.totalAmount.toStringAsFixed(2)} • ${booking.partySize} guest(s)',
                               style: const TextStyle(color: DivineColors.ink, fontWeight: FontWeight.w700, fontSize: 12),
                             ),
                             if (booking.bookingDate != null) ...[
@@ -58,8 +58,7 @@ class AdminBookingsPage extends ConsumerWidget {
                                 DropdownMenuItem(value: 'in_progress', child: Text('In progress')),
                                 DropdownMenuItem(value: 'completed', child: Text('Completed')),
                                 DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
-                                DropdownMenuItem(value: 'refunded', child: Text('Refunded')),
-                              ],
+                                                              ],
                               onChanged: booking.status == 'refunded' ? null : (value) async {
                                 if (value == null || value == booking.status || value == 'refunded') return;
                                 try {
