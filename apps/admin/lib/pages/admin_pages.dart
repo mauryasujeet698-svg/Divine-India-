@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'admin_management_pages.dart';
+
 class AdminSignInPage extends StatefulWidget {
   const AdminSignInPage({
     super.key,
@@ -222,18 +224,8 @@ class _AdminShellState extends State<AdminShell> {
     final pages = [
       AdminDashboardPage(onManageBanners: () => setState(() => _index = 1)),
       const BannerManagementPage(),
-      const AdminSectionPage(
-        title: 'Bookings',
-        subtitle: 'Review reservations, payment status and fulfilment.',
-        icon: Icons.confirmation_number_outlined,
-        items: ['New and pending bookings', 'Confirmed reservations', 'Cancellations and refunds'],
-      ),
-      const AdminSectionPage(
-        title: 'Services & providers',
-        subtitle: 'Manage the marketplace and trusted service partners.',
-        icon: Icons.storefront_outlined,
-        items: ['Service catalogue', 'Provider applications', 'Categories and availability'],
-      ),
+      const AdminBookingsPage(),
+      const AdminServicesPage(),
       const AdminSectionPage(
         title: 'Platform settings',
         subtitle: 'Keep the platform identity and operating policies current.',
