@@ -439,72 +439,45 @@ class _DestinationStrip extends StatelessWidget {
   }
 }
 
-class ExplorePage extends StatefulWidget {
+class ExplorePage extends ConsumerStatefulWidget {
   const ExplorePage({super.key});
 
   @override
-  State<ExplorePage> createState() => _ExplorePageState();
+  ConsumerState<ExplorePage> createState() => _ExplorePageState();
 }
 
-class _ExplorePageState extends State<ExplorePage> {
-  final TextEditingController _searchController = TextEditingController();
-  String _selected = 'All';
-
-  static const _categories = [
-    'All',
-    'Puja & rituals',
-    'Pilgrimage',
-    'Spiritual stays',
-    'Local experiences',
-  ];
-
-  static const _experiences = [
-    _Experience('Kashi temple trails', 'Varanasi, Uttar Pradesh', 'Pilgrimage', Icons.temple_hindu_rounded),
-    _Experience('Personal puja assistance', 'At selected sacred temples', 'Puja & rituals', Icons.local_florist_rounded),
-    _Experience('Heritage river walk', 'Varanasi ghats', 'Local experiences', Icons.directions_walk_rounded),
-    _Experience('Pilgrim-friendly stays', 'Near major temple districts', 'Spiritual stays', Icons.hotel_rounded),
-  ];
+class _ExplorePageState extends ConsumerState<ExplorePage> {
+  final _search = TextEditingController();
+  String _category = 'All';
+  static const _categories = ['All', 'Puja & rituals', 'Pilgrimage', 'Spiritual stays', 'Local experiences'];
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _search.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final query = _searchController.text.trim().toLowerCase();
-    final visible = _experiences.where((item) {
-      final categoryMatches = _selected == 'All' || item.category == _selected;
-      final searchMatches =
-          query.isEmpty || item.title.toLowerCase().contains(query) || item.location.toLowerCase().contains(query);
-      return categoryMatches && searchMatches;
-    }).toList();
-
+    final listings = ref.watch(publishedServicesProvider);
+    final query = _search.text.trim().toLowerCase();
+    const categoryBySlug = {
+      'puja-rituals': 'Puja & rituals',
+      'pilgrimage': 'Pilgrimage',
+      'spiritual-stays': 'Spiritual stays',
+      'local-experiences': 'Local experiences',
+    };
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
       children: [
-        const Text(
-          'Discover Bharat',
-          style: TextStyle(
-            color: DivineColors.maroon,
-            fontSize: 25,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
+        const Text('Discover Bharat', style: TextStyle(color: DivineColors.maroon, fontSize: 25, fontWeight: FontWeight.w900)),
         const SizedBox(height: 5),
-        const Text(
-          'Find experiences for your next meaningful journey.',
-          style: TextStyle(color: DivineColors.muted, fontSize: 13),
-        ),
+        const Text('Find experiences for your next meaningful journey.', style: TextStyle(color: DivineColors.muted, fontSize: 13)),
         const SizedBox(height: 17),
         TextField(
-          controller: _searchController,
+          controller: _search,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.search_rounded),
-            hintText: 'Search destinations or experiences',
-          ),
+          decoration: const InputDecoration(prefixIcon: Icon(Icons.search_rounded), hintText: 'Search destinations or experiences'),
         ),
         const SizedBox(height: 14),
         SizedBox(
@@ -514,156 +487,140 @@ class _ExplorePageState extends State<ExplorePage> {
             itemCount: _categories.length,
             separatorBuilder: (_, index) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
-              final category = _categories[index];
-              final selected = category == _selected;
+              final value = _categories[index];
+              final selected = _category == value;
               return ChoiceChip(
-                label: Text(category),
+                label: Text(value),
                 selected: selected,
-                onSelected: (_) => setState(() => _selected = category),
+                onSelected: (_) => setState(() => _category = value),
                 selectedColor: DivineColors.sand,
-                labelStyle: TextStyle(
-                  color: selected ? DivineColors.maroon : DivineColors.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
                 side: const BorderSide(color: DivineColors.border),
+                labelStyle: TextStyle(color: selected ? DivineColors.maroon : DivineColors.muted, fontSize: 11, fontWeight: FontWeight.w700),
               );
             },
           ),
         ),
         const SizedBox(height: 18),
-        DivineSectionHeading(
-          title: 'Experiences',
-          subtitle: '${visible.length} curated categories and ideas',
+        listings.when(
+          loading: () => const Center(child: Padding(padding: EdgeInsets.all(28), child: CircularProgressIndicator(color: DivineColors.saffron))),
+          error: (error, stack) => const DivineEmptyState(icon: Icons.cloud_off_rounded, title: 'Catalogue unavailable', message: 'Please check your connection and try again.'),
+          data: (items) {
+            final visible = items.where((item) {
+              final category = categoryBySlug[item.slug] ?? 'All';
+              final categoryMatches = _category == 'All' || category == _category;
+              final queryMatches = query.isEmpty || item.title.toLowerCase().contains(query) || item.shortDescription.toLowerCase().contains(query) || (item.locationName ?? '').toLowerCase().contains(query);
+              return categoryMatches && queryMatches;
+            }).toList();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DivineSectionHeading(title: 'Published experiences', subtitle: '${visible.length} available listings'),
+                const SizedBox(height: 12),
+                if (visible.isEmpty)
+                  const DivineEmptyState(icon: Icons.travel_explore_rounded, title: 'No experiences published yet', message: 'Pujas, pilgrimage journeys and local experiences will appear here when the Divine India team publishes them.')
+                else
+                  ...visible.map((item) => Container(
+                        margin: const EdgeInsets.only(bottom: 11),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(color: DivineColors.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: DivineColors.border)),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 58,
+                              height: 58,
+                              decoration: BoxDecoration(color: DivineColors.sand, borderRadius: BorderRadius.circular(16)),
+                              clipBehavior: Clip.antiAlias,
+                              child: item.imageUrl == null || item.imageUrl!.isEmpty
+                                  ? const Icon(Icons.temple_hindu_rounded, color: DivineColors.maroon, size: 28)
+                                  : Image.network(item.imageUrl!, fit: BoxFit.cover, errorBuilder: (_, error, stack) => const Icon(Icons.temple_hindu_rounded, color: DivineColors.maroon)),
+                            ),
+                            const SizedBox(width: 13),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(item.title, style: const TextStyle(color: DivineColors.ink, fontWeight: FontWeight.w800, fontSize: 14)),
+                                  if (item.locationName?.isNotEmpty ?? false) ...[
+                                    const SizedBox(height: 3),
+                                    Text(item.locationName!, style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
+                                  ],
+                                  if (item.shortDescription.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(item.shortDescription, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
+                                  ],
+                                  const SizedBox(height: 5),
+                                  Text(item.priceFrom == null ? 'Price on request' : 'From ${item.currency} ${item.priceFrom!.toStringAsFixed(0)}', style: const TextStyle(color: DivineColors.saffronDark, fontSize: 10, fontWeight: FontWeight.w800)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+              ],
+            );
+          },
         ),
-        const SizedBox(height: 12),
-        if (visible.isEmpty)
-          const DivineEmptyState(
-            icon: Icons.search_off_rounded,
-            title: 'No matching experiences',
-            message: 'Try another destination or choose a different category.',
-          )
-        else
-          ...visible.map((item) => _ExperienceCard(item: item)),
       ],
     );
   }
 }
 
-class _Experience {
-  const _Experience(this.title, this.location, this.category, this.icon);
-
-  final String title;
-  final String location;
-  final String category;
-  final IconData icon;
-}
-
-class _ExperienceCard extends StatelessWidget {
-  const _ExperienceCard({required this.item});
-
-  final _Experience item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 11),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: DivineColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: DivineColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 57,
-            height: 57,
-            decoration: BoxDecoration(
-              color: DivineColors.sand,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(item.icon, color: DivineColors.maroon, size: 27),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    color: DivineColors.ink,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.location,
-                  style: const TextStyle(color: DivineColors.muted, fontSize: 11),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  item.category.toUpperCase(),
-                  style: const TextStyle(
-                    color: DivineColors.saffronDark,
-                    letterSpacing: .7,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: DivineColors.muted),
-        ],
-      ),
-    );
-  }
-}
-
-class CustomerBookingsPage extends StatelessWidget {
+class CustomerBookingsPage extends ConsumerWidget {
   const CustomerBookingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = divineSupabaseClient?.auth.currentUser;
+    if (user == null) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 28),
+        children: [
+          const Text('My bookings', style: TextStyle(color: DivineColors.maroon, fontSize: 25, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 6),
+          const Text('Keep your journeys and experiences in one place.', style: TextStyle(color: DivineColors.muted, fontSize: 13)),
+          const SizedBox(height: 22),
+          const DivineEmptyState(icon: Icons.confirmation_number_outlined, title: 'Your journeys will appear here', message: 'Sign in when you are ready to make a booking and track its status.'),
+          const SizedBox(height: 14),
+          FilledButton.icon(onPressed: () => context.push('/sign-in'), icon: const Icon(Icons.login_rounded), label: const Text('Sign in to view bookings')),
+        ],
+      );
+    }
+    final bookings = ref.watch(customerBookingsProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 20, 18, 28),
       children: [
-        const Text(
-          'My bookings',
-          style: TextStyle(
-            color: DivineColors.maroon,
-            fontSize: 25,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
+        const Text('My bookings', style: TextStyle(color: DivineColors.maroon, fontSize: 25, fontWeight: FontWeight.w900)),
         const SizedBox(height: 6),
-        const Text(
-          'Keep your journeys and experiences in one place.',
-          style: TextStyle(color: DivineColors.muted, fontSize: 13),
+        const Text('Track your pujas, trips and experiences.', style: TextStyle(color: DivineColors.muted, fontSize: 13)),
+        const SizedBox(height: 18),
+        bookings.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: DivineColors.saffron)),
+          error: (error, stack) => const DivineEmptyState(icon: Icons.cloud_off_rounded, title: 'Bookings unavailable', message: 'Please check your connection and try again.'),
+          data: (items) => items.isEmpty
+              ? const DivineEmptyState(icon: Icons.temple_hindu_rounded, title: 'No bookings yet', message: 'Your confirmed pujas, trips and experiences will appear here.')
+              : Column(
+                  children: items.map((booking) => Container(
+                        margin: const EdgeInsets.only(bottom: 11),
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(color: DivineColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: DivineColors.border)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(child: Text(booking.reference, style: const TextStyle(color: DivineColors.maroon, fontWeight: FontWeight.w900))),
+                                DivineStatusPill(label: booking.status.toUpperCase()),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(booking.bookingDate?.toLocal().toString().split('.').first ?? 'Date to be confirmed', style: const TextStyle(color: DivineColors.muted, fontSize: 11)),
+                            const SizedBox(height: 4),
+                            Text('${booking.currency} ${booking.totalAmount.toStringAsFixed(2)} • ${booking.partySize} guest(s)', style: const TextStyle(color: DivineColors.ink, fontWeight: FontWeight.w700, fontSize: 12)),
+                          ],
+                        ),
+                      )).toList(),
+                ),
         ),
-        const SizedBox(height: 22),
-        if (user == null) ...[
-          const DivineEmptyState(
-            icon: Icons.confirmation_number_outlined,
-            title: 'Your journeys will appear here',
-            message: 'Sign in when you are ready to make a booking and track its status.',
-          ),
-          const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: () => context.push('/sign-in'),
-            icon: const Icon(Icons.login_rounded),
-            label: const Text('Sign in to view bookings'),
-          ),
-        ] else
-          const DivineEmptyState(
-            icon: Icons.temple_hindu_rounded,
-            title: 'No bookings yet',
-            message: 'Your confirmed pujas, trips and experiences will appear here.',
-          ),
       ],
     );
   }
