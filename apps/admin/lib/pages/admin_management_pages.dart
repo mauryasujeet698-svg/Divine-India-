@@ -122,20 +122,18 @@ class AdminBookingsPage extends ConsumerWidget {
                                   label: const Text('Assign provider'),
                                 ),
                               ),
-                            const SizedBox(height: 10),
-                            DropdownButtonFormField<String>(
-                              value: booking.status,
-                              decoration: const InputDecoration(labelText: 'Booking status', isDense: true),
-                              items: const [
-                                DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                                DropdownMenuItem(value: 'confirmed', child: Text('Confirmed')),
-                                DropdownMenuItem(value: 'assigned', child: Text('Assigned')),
-                                DropdownMenuItem(value: 'in_progress', child: Text('In progress')),
-                                DropdownMenuItem(value: 'completed', child: Text('Completed')),
-                                DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
-                                                              ],
-                              onChanged: (value) async {
-                                if (value == null || value == booking.status) return;
+                            if (booking.status == 'pending' || booking.status == 'confirmed') ...[
+                              const SizedBox(height: 10),
+                              DropdownButtonFormField<String>(
+                                value: booking.status,
+                                decoration: const InputDecoration(labelText: 'Booking status', isDense: true),
+                                items: const [
+                                  DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                                  DropdownMenuItem(value: 'confirmed', child: Text('Confirmed')),
+                                  DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
+                                ],
+                                onChanged: (value) async {
+                                  if (value == null || value == booking.status) return;
                                 try {
                                   await repository.updateStatus(booking.id, value);
                                 } catch (_) {
@@ -143,8 +141,9 @@ class AdminBookingsPage extends ConsumerWidget {
                                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update booking status.')));
                                   }
                                 }
-                              },
-                            ),
+                                },
+                              ),
+                            ],
                           ],
                         ),
                       )).toList(),
