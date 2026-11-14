@@ -61,6 +61,41 @@ class BookingRepository {
     return reference;
   }
 
+  Future<void> assignProvider({
+    required String bookingId,
+    required String providerUserId,
+  }) async {
+    final response = await _client.functions.invoke(
+      'assign-booking',
+      body: {
+        'booking_id': bookingId,
+        'provider_user_id': providerUserId.trim(),
+      },
+    );
+    if (response.status < 200 || response.status >= 300) {
+      throw StateError('Could not assign this booking to the provider.');
+    }
+  }
+
+  Future<void> updateAssignedProgress({
+    required String bookingId,
+    required String status,
+  }) async {
+    if (status != 'in_progress' && status != 'completed') {
+      throw ArgumentError.value(status, 'status', 'Unsupported provider progress state.');
+    }
+    final response = await _client.functions.invoke(
+      'update-booking-progress',
+      body: {
+        'booking_id': bookingId,
+        'status': status,
+      },
+    );
+    if (response.status < 200 || response.status >= 300) {
+      throw StateError('Could not update this assigned booking.');
+    }
+  }
+
   Future<void> updateStatus(String id, String status) async {
     const allowed = {'confirmed', 'assigned', 'in_progress', 'completed', 'cancelled'};
     if (!allowed.contains(status)) {
