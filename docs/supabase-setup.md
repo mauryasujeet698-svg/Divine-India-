@@ -26,6 +26,16 @@ on conflict (user_id) do update set role = excluded.role;
 
 Do not expose a role-editing feature to regular app users.
 
+For a provider account, create and verify the Auth user through a trusted process, complete the platform's real-world provider checks outside this starter app, then assign the provider role from the SQL editor:
+
+```sql
+insert into public.user_roles (user_id, role)
+values ('11111111-1111-4111-8111-111111111111', 'provider')
+on conflict (user_id) do update set role = excluded.role;
+```
+
+The UUID is an example placeholder. The Admin app's booking assignment action requires the actual verified provider Auth user UUID. Provider onboarding, KYC collection and approval UI are not included in this first implementation pass.
+
 ## 4. Homepage banners
 The migration creates the `divine-banners` Storage bucket and the `public.banners` table. Public users can read currently published banners; only platform admins can write banner rows or upload/delete bucket objects. The customer app listens to Supabase Realtime, so changes appear without an app release after the migrations are applied and Realtime is available for the table.
 
