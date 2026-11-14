@@ -613,6 +613,8 @@ class _BannerEditorDialogState extends State<BannerEditorDialog> {
   final ImagePicker _picker = ImagePicker();
   XFile? _pickedImage;
   bool _active = true;
+  DateTime? _startsAt;
+  DateTime? _endsAt;
   bool _saving = false;
   String? _error;
 
@@ -626,6 +628,8 @@ class _BannerEditorDialogState extends State<BannerEditorDialog> {
     _ctaRoute = TextEditingController(text: banner?.ctaRoute ?? '/explore');
     _sortOrder = TextEditingController(text: (banner?.sortOrder ?? 0).toString());
     _active = banner?.isActive ?? true;
+    _startsAt = banner?.startsAt?.toLocal();
+    _endsAt = banner?.endsAt?.toLocal();
   }
 
   @override
@@ -647,8 +651,50 @@ class _BannerEditorDialogState extends State<BannerEditorDialog> {
     if (image != null && mounted) setState(() => _pickedImage = image);
   }
 
+  Future<void> _chooseSchedule(bool isStart) async {
+    final current = isStart ? _startsAt : _endsAt;
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: current ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 10),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: current == null
+          ? TimeOfDay.fromDateTime(now)
+          : TimeOfDay.fromDateTime(current),
+    );
+    if (time == null || !mounted) return;
+    final scheduled = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    setState(() {
+      if (isStart) {
+        _startsAt = scheduled;
+      } else {
+        _endsAt = scheduled;
+      }
+    });
+  }
+
+  String _scheduleLabel(DateTime? value) {
+    if (value == null) return 'Not scheduled';
+    final date = MaterialLocalizations.of(context).formatMediumDate(value);
+    final time = TimeOfDay.fromDateTime(value).format(context);
+    return '$date • $time';
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate() || _saving) return;
+    if (_startsAt != null && _endsAt != null && !_endsAt!.isAfter(_startsAt!)) {
+      setState(() => _error = 'The end time must be later than the start time.');
+      return;
+    }
+    if ((_startsAt == null) != (_endsAt == null)) {
+      setState(() => _error = 'Set both schedule start and end, or leave both empty.');
+      return;
+    }
     if (_pickedImage == null && (widget.initial?.imageUrl.isEmpty ?? true)) {
       setState(() => _error = 'Choose a banner image before publishing.');
       return;
@@ -682,6 +728,8 @@ class _BannerEditorDialogState extends State<BannerEditorDialog> {
         ctaRoute: _ctaRoute.text,
         sortOrder: int.tryParse(_sortOrder.text) ?? 0,
         isActive: _active,
+        startsAt: _startsAt,
+        endsAt: _endsAt,
       );
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
@@ -761,6 +809,24 @@ class _BannerEditorDialogState extends State<BannerEditorDialog> {
                   controller: _sortOrder,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: 'Display order'),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Publish from'),
+                  subtitle: Text(_scheduleLabel(_startsAt)),
+                  trailing: IconButton(
+                    onPressed: _saving ? null : () => _chooseSchedule(true),
+                    icon: const Icon(Icons.calendar_month_rounded),
+                  ),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Unpublish at'),
+                  subtitle: Text(_scheduleLabel(_endsAt)),
+                  trailing: IconButton(
+                    onPressed: _saving ? null : () => _chooseSchedule(false),
+                    icon: const Icon(Icons.event_busy_rounded),
+                  ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
