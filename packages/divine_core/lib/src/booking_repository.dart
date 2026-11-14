@@ -32,6 +32,35 @@ class BookingRepository {
         .map((rows) => rows.map(BookingModel.fromMap).toList(growable: false));
   }
 
+  Future<String> requestBooking({
+    required String serviceId,
+    required DateTime bookingDate,
+    required int partySize,
+    required String customerNote,
+  }) async {
+    if (partySize < 1 || partySize > 20) {
+      throw ArgumentError.value(partySize, 'partySize', 'Choose between 1 and 20 guests.');
+    }
+    final response = await _client.functions.invoke(
+      'create-booking',
+      body: {
+        'service_id': serviceId,
+        'booking_date': bookingDate.toUtc().toIso8601String(),
+        'party_size': partySize,
+        'customer_note': customerNote.trim(),
+      },
+    );
+    final data = response.data;
+    if (response.status < 200 || response.status >= 300 || data is! Map) {
+      throw StateError('The booking request could not be submitted.');
+    }
+    final reference = data['booking_reference']?.toString();
+    if (reference == null || reference.isEmpty) {
+      throw StateError('The booking service returned an invalid response.');
+    }
+    return reference;
+  }
+
   Future<void> updateStatus(String id, String status) async {
     const allowed = {'confirmed', 'assigned', 'in_progress', 'completed', 'cancelled'};
     if (!allowed.contains(status)) {
