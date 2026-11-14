@@ -639,11 +639,12 @@ class CustomerBookingsPage extends ConsumerWidget {
   }
 }
 
-class CustomerProfilePage extends StatelessWidget {
+class CustomerProfilePage extends ConsumerWidget {
   const CustomerProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authStateChangesProvider);
     final user = divineSupabaseClient?.auth.currentUser;
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
@@ -716,6 +717,7 @@ class CustomerProfilePage extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () async {
               await DivineAuthService().signOut();
+              if (context.mounted) context.go('/home');
             },
             icon: const Icon(Icons.logout_rounded),
             label: const Text('Sign out'),
