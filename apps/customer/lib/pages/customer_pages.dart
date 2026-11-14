@@ -73,8 +73,8 @@ class CustomerHomePage extends StatelessWidget {
         ),
         const SizedBox(height: 25),
         const DivineSectionHeading(
-          title: 'Sacred destinations',
-          subtitle: 'Places where faith meets heritage',
+          title: 'Featured experiences',
+          subtitle: 'Freshly published by the Divine India team',
           actionLabel: 'View all',
         ),
         const SizedBox(height: 13),
@@ -387,25 +387,121 @@ class _NoPublishedBanner extends StatelessWidget {
   }
 }
 
-class _DestinationStrip extends StatelessWidget {
+class _DestinationStrip extends ConsumerWidget {
   const _DestinationStrip();
 
-  static const _items = [
+  static const _demoItems = [
     ('Varanasi', 'The eternal city', Icons.waves_rounded),
     ('Ayodhya', 'Land of devotion', Icons.temple_hindu_rounded),
     ('Ujjain', 'City of Mahakal', Icons.account_balance_rounded),
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final services = ref.watch(publishedServicesProvider);
+    return services.when(
+      loading: _buildDemoCards,
+      error: (error, stack) => _buildDemoCards(),
+      data: (items) {
+        if (items.isEmpty) return _buildDemoCards();
+        final featured = items.take(6).toList();
+        return SizedBox(
+          height: 142,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: featured.length,
+            separatorBuilder: (_, index) => const SizedBox(width: 11),
+            itemBuilder: (context, index) {
+              final service = featured[index];
+              return InkWell(
+                onTap: () => context.go('/explore'),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 190,
+                  decoration: BoxDecoration(
+                    color: DivineColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: DivineColors.border),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            if (service.imageUrl != null && service.imageUrl!.isNotEmpty)
+                              Image.network(
+                                service.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, error, stack) => const ColoredBox(color: DivineColors.sand),
+                              )
+                            else
+                              const ColoredBox(
+                                color: DivineColors.sand,
+                                child: Center(
+                                  child: Icon(Icons.temple_hindu_rounded, color: DivineColors.maroon, size: 30),
+                                ),
+                              ),
+                            Positioned(
+                              left: 9,
+                              top: 9,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.92),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Text(
+                                  'FEATURED',
+                                  style: TextStyle(color: DivineColors.maroon, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: .5),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(11, 8, 11, 9),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              service.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: DivineColors.ink, fontSize: 12, fontWeight: FontWeight.w900),
+                            ),
+                            Text(
+                              service.locationName ?? 'Explore experience',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: DivineColors.muted, fontSize: 9),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDemoCards() {
     return SizedBox(
       height: 142,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: _items.length,
+        itemCount: _demoItems.length,
         separatorBuilder: (_, index) => const SizedBox(width: 11),
         itemBuilder: (context, index) {
-          final item = _items[index];
+          final item = _demoItems[index];
           return Container(
             width: 154,
             padding: const EdgeInsets.all(15),
