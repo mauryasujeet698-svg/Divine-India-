@@ -31,7 +31,7 @@ abstract final class DivineTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: DivineColors.ivory,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: const AppBarThemeData(
         backgroundColor: DivineColors.ivory,
         foregroundColor: DivineColors.ink,
         elevation: 0,
@@ -51,7 +51,7 @@ abstract final class DivineTheme {
           side: const BorderSide(color: DivineColors.border),
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
+      inputDecorationTheme: InputDecorationThemeData(
         filled: true,
         fillColor: DivineColors.surface,
         hintStyle: const TextStyle(color: DivineColors.muted),
