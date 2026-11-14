@@ -24,11 +24,13 @@ create policy "users can read their own role"
 
 grant select on public.user_roles to authenticated;
 
+-- These role helpers intentionally run as the caller (SECURITY INVOKER).
+-- The user_roles RLS policy restricts the lookup to the caller's own role.
 create or replace function private.current_user_has_role(allowed_roles text[])
 returns boolean
 language sql
 stable
-security definer
+security invoker
 set search_path = ''
 as $$
   select exists (
@@ -46,7 +48,7 @@ create or replace function private.is_platform_admin()
 returns boolean
 language sql
 stable
-security definer
+security invoker
 set search_path = ''
 as $$
   select private.current_user_has_role(array['admin']);
@@ -56,7 +58,7 @@ create or replace function private.is_platform_operator()
 returns boolean
 language sql
 stable
-security definer
+security invoker
 set search_path = ''
 as $$
   select private.current_user_has_role(array['admin', 'operations']);

@@ -1,9 +1,9 @@
 # Supabase setup
 
-This repository includes a starter migration. It has **not** been applied to a Supabase project.
+This repository includes starter migrations and a booking-request Edge Function. They have **not** been applied or deployed to a hosted Supabase project.
 
 ## 1. Create and configure a project
-Create a Supabase project, then run the SQL migration in `supabase/migrations` using the Supabase CLI or SQL editor. Review the migration before applying it to production.
+Create a Supabase project, then review and apply the migrations in `supabase/migrations` in timestamp order using the Supabase CLI or SQL editor. Do not apply them to a live project before reviewing the schema and access model.
 
 ## 2. Configure the Flutter apps
 
@@ -11,9 +11,9 @@ Create a Supabase project, then run the SQL migration in `supabase/migrations` u
 flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
-Never use the service-role/secret key in a Flutter app.
+Use a Supabase publishable key in mobile applications. Never put a secret key, legacy service-role key or database password in Flutter code, dart-defines, or app bundles.
 
-## 3. Roles
+## 3. Assign roles securely
 The migration creates `public.user_roles`. New users do not become admins automatically. Assign `admin`, `operations`, or `provider` roles only through a trusted server-side process or the Supabase SQL editor by an authorized project owner.
 
 Example one-time role assignment (replace the UUID with the verified Auth user ID):
@@ -27,26 +27,26 @@ on conflict (user_id) do update set role = excluded.role;
 Do not expose a role-editing feature to regular app users.
 
 ## 4. Homepage banners
-The migration creates the `divine-banners` Storage bucket and the `public.banners` table. Public users can read active banners; only platform admins can write banner rows or upload/delete bucket objects. The migration attempts to add the table to `supabase_realtime`.
+The migration creates the `divine-banners` Storage bucket and the `public.banners` table. Public users can read currently published banners; only platform admins can write banner rows or upload/delete bucket objects. The customer app listens to Supabase Realtime, so changes appear without an app release after the migrations are applied and Realtime is available for the table.
 
-## 5. OAuth and redirects
-Configure Google or other identity providers in Supabase Auth and register redirect URLs for each Android application before enabling OAuth. This starter currently provides email/password sign-in for restricted apps and keeps customer browsing available without authentication.
+## 5. Authentication and redirects
+Configure Supabase Auth email templates, allowed redirect URLs and any OAuth providers in the dashboard. The initial apps use email/password authentication. Register the matching Android application/deep-link redirects before enabling OAuth or password recovery.
 
 ## 6. Deploy the booking-request function
 
-Apply all four migrations in timestamp order, then deploy the Edge Function:
+After applying all migrations, deploy the function:
 
 ```bash
 supabase functions deploy create-booking
 ```
 
-The function uses the project secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Supabase provides these to Edge Functions in a standard project. Do not copy the service-role key into any Flutter app or client-side configuration.
+The function uses the current `@supabase/server` SDK. Supabase provisions `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEYS`, `SUPABASE_SECRET_KEYS` and `SUPABASE_JWKS` in hosted Edge Function environments. The SDK verifies the signed-in user's JWT and provides an RLS-scoped client; it uses the secret-backed admin client only for the validated booking insert. Do not copy a secret key into the repository or Flutter app.
 
-This endpoint creates a **pending booking request** only. It does not collect payment, confirm inventory, or issue refunds. Add a verified payment-gateway integration before treating the booking as paid or confirmed.
+This endpoint creates a **pending booking request** only. It does not collect payment, confirm inventory, or issue refunds. The amount remains zero until a trusted quote/payment workflow is implemented.
 
 ## 7. Production checklist
 - Configure Auth email templates, rate limits and allowed redirect URLs.
 - Confirm RLS policies with anon, customer, provider, operations and admin test accounts.
 - Configure backups, database monitoring and Storage lifecycle policies.
 - Add a custom domain and production privacy/terms pages.
-- Never commit project secrets, signing keys or service-role credentials.
+- Never commit project secrets, signing keys or secret API keys.

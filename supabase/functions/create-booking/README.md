@@ -1,12 +1,18 @@
 # create-booking
 
-Deploy with Supabase Functions after linking the correct project.
+Deploy with:
 
-Required Edge Function secrets:
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+```bash
+supabase functions deploy create-booking
+```
 
-The function requires a valid authenticated user, validates the requested published service and future booking date, bounds the party size and note length, and then creates a pending booking under the authenticated user's ID using server-side credentials.
+The function uses the pinned `@supabase/server` package and requires an authenticated Supabase user. The wrapper verifies the caller's JWT and provides:
 
-It is a booking **request**, not a payment capture or confirmed reservation. Amount is stored as zero until a verified quote/payment workflow is implemented. Never expose the service-role key to mobile apps.
+- `context.supabase`: user-scoped client that respects RLS when checking the published experience.
+- `context.supabaseAdmin`: secret-backed server client used only for the validated insert.
+
+Hosted Supabase Edge Functions automatically provide the required URL, publishable/secret key maps and JWKS environment variables. Never put the secret key in Flutter source, app build variables, or Git.
+
+The function validates the service, future booking date, party size and note length. It creates a booking request owned by the authenticated user's verified ID. It returns a pending reference only; it does not collect payment, confirm capacity or perform refunds.
+
+Keep `verify_jwt = true` for this user-authenticated function.
