@@ -405,7 +405,13 @@ class OperationsSchedulePage extends ConsumerWidget {
             return Column(
               children: List.generate(7, (index) {
                 final day = index + 1;
-                final current = items.where((item) => item.weekday == day).firstOrNull;
+                ProviderAvailabilityModel? current;
+                for (final entry in items) {
+                  if (entry.weekday == day) {
+                    current = entry;
+                    break;
+                  }
+                }
                 final isAvailable = current?.isAvailable ?? false;
                 final start = current?.startTime.substring(0, 5) ?? '09:00';
                 final end = current?.endTime.substring(0, 5) ?? '17:00';
