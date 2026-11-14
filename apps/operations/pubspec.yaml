@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.5.0
-  supabase_flutter: ^2.17.1
+  supabase_flutter: ^2.18.3
   divine_core:
     path: ../../packages/divine_core
   divine_design_system:
