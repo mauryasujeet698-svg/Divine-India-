@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'service_booking_request_dialog.dart';
+
 class CustomerHomePage extends StatelessWidget {
   const CustomerHomePage({super.key});
 
@@ -556,6 +558,11 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
                                   ],
                                   const SizedBox(height: 5),
                                   Text(item.priceFrom == null ? 'Price on request' : 'From ${item.currency} ${item.priceFrom!.toStringAsFixed(0)}', style: const TextStyle(color: DivineColors.saffronDark, fontSize: 10, fontWeight: FontWeight.w800)),
+                                  TextButton.icon(
+                                    onPressed: () => showServiceBookingRequest(context, item),
+                                    icon: const Icon(Icons.event_available_rounded, size: 16),
+                                    label: const Text('Request booking'),
+                                  ),
                                 ],
                               ),
                             ),
