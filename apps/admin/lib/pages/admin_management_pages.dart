@@ -258,7 +258,31 @@ class _ServiceEditorDialogState extends State<ServiceEditorDialog> {
               children: [
                 TextFormField(controller: _title, decoration: const InputDecoration(labelText: 'Service name'), validator: (v) => v == null || v.trim().isEmpty ? 'Enter a service name.' : null),
                 const SizedBox(height: 9),
-                TextFormField(controller: _slug, decoration: const InputDecoration(labelText: 'Unique service slug (e.g. kashi-puja)'), validator: (v) => v == null || !RegExp(r'^[a-z0-9-]+
+                TextFormField(
+                  controller: _slug,
+                  decoration: const InputDecoration(
+                    labelText: 'Unique service slug (e.g. kashi-puja)',
+                  ),
+                  validator: (value) => value == null ||
+                          !RegExp(r'^[a-z0-9-]+$').hasMatch(value.trim())
+                      ? 'Use lowercase letters, numbers and hyphens.'
+                      : null,
+                ),
+                const SizedBox(height: 9),
+                DropdownButtonFormField<String>(
+                  value: _categorySlug,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  items: const [
+                    DropdownMenuItem(value: 'puja-rituals', child: Text('Puja & rituals')),
+                    DropdownMenuItem(value: 'pilgrimage', child: Text('Pilgrimage')),
+                    DropdownMenuItem(value: 'spiritual-stays', child: Text('Spiritual stays')),
+                    DropdownMenuItem(value: 'local-experiences', child: Text('Local experiences')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setState(() => _categorySlug = value);
+                  },
+                ),
+                const SizedBox(height: 9),
                 TextFormField(controller: _description, maxLines: 3, decoration: const InputDecoration(labelText: 'Description')),
                 const SizedBox(height: 9),
                 TextFormField(controller: _location, decoration: const InputDecoration(labelText: 'Location')),
